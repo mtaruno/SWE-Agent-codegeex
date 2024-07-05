@@ -86,8 +86,8 @@ def string2bool(s):
 
 if __name__ == "__main__":
     parser = ArgumentParser()
-    parser.add_argument("traj_path", type=str, help="Path to trajectory file")
-    parser.add_argument("--output_dir", type=str, help="Output directory for action demos", default="./demos")
+    parser.add_argument("--traj_path", type=str, help="Path to trajectory file")
+    parser.add_argument("--output_dir", type=str, help="Output directory for action demos", default="make_demos/demos")
     parser.add_argument("--suffix", type=str, help="Suffix for the output file", default="")
     parser.add_argument("--overwrite", type=string2bool, help="Overwrite existing files", default=False, nargs='?')
     parser.add_argument("--include_user", type=string2bool, help="Include user responses (computer)", default=False, nargs='?')

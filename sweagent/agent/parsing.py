@@ -115,6 +115,7 @@ class ThoughtActionParser(ParseFunction):
         code_block_pat = re.compile(r'^```(\S*)\s*\n|^```\s*$', re.MULTILINE)
         stack = []
         last_valid_block = None
+
         for match in code_block_pat.finditer(model_response):
             if stack and not match.group(1):  # Closing of a code block
                 start = stack.pop()
