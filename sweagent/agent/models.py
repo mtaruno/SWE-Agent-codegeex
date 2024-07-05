@@ -1109,13 +1109,6 @@ class codegeexModel(BaseModel):
             prompt = self.messages_to_prompt(messages)
             temperature = self.args.temperature
             top_p = self.args.top_p
-            
-            # logging
-            self.RUN["messages"] = messages
-            self.RUN["prompt"] = prompt
-            self.RUN["temperature"] = self.args.temperature
-            self.RUN["top_p"] = self.args.top_p
-            self.RUN["role_order"] = [role for role, content in messages]
 
             
             url = "http://172.18.64.110:9090/v1/completions"
@@ -1130,12 +1123,6 @@ class codegeexModel(BaseModel):
                 temperature = self.args.temperature,
                 top_p = self.args.top_p
             )
-
-
-            self.RUN['latest_response'] = response
-
-            with open("RUN.yaml", 'w') as file:
-                yaml.dump(self.RUN, file,default_flow_style=True, allow_unicode=True)
             # return response - TODO: Calculate + update costs,             
             return response
     
