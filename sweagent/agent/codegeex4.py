@@ -1,3 +1,7 @@
+'''
+This file is what we use to query CodeGeeX 4. 
+
+'''
 import json
 import gzip
 import fire
@@ -53,12 +57,15 @@ def generate(
 def main():
     system_prompt = "You are an intelligent programming assistant named CodeGeeX. You will answer any questions users have about programming, coding, and computers, and provide code that is formatted correctly. "
     query = "What can you do?"
+
+    # Sample prompt 
     # prompt = f"<|assistant|>\n{system_prompt}\n<|user|>\n{query}\n"
-    with open("prompt.txt", "r") as f:
+    
+    # taking prompt from file
+    with open("codegeex_inspect/prompt.txt", "r") as f:
         # load from f
         prompt = f.read()
-    
-    print(prompt)
+
 
     url = "http://172.18.64.110:9090/v1/completions"
     try:
