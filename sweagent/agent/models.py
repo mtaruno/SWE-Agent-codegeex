@@ -1070,9 +1070,9 @@ class codegeexModel(BaseModel):
                 logger.warning("Skipping none entry")
                 continue
 
-            if entry['role'] == 'system':
-                logger.info("Switched from system to assistant")
-                entry['role'] = 'assistant'
+            # if entry['role'] == 'system':
+            #     logger.info("Switched from system to assistant")
+            #     entry['role'] = 'assistant'
             
             formatted_prompt += f"<|{entry['role']}|>\n{entry['content']}\n"
         return formatted_prompt
@@ -1123,7 +1123,12 @@ class codegeexModel(BaseModel):
                 temperature = self.args.temperature,
                 top_p = self.args.top_p
             )
-            # return response - TODO: Calculate + update costs,             
+            # return response - TODO: Calculate + update costs,       
+
+            with open("codegeex_inspect/agent_prompt.yaml", "w") as f:
+                yaml.dump(prompt, f, default_flow_style=True, allow_unicode=True)
+
+
             return response
     
         except Exception as e:
@@ -1133,6 +1138,7 @@ class codegeexModel(BaseModel):
             print("Bad Request Error! Nyawwwwwwwwwwwwww. Error: ")
             print(e)
             raise CostLimitExceededError(f"Context window ({self.model_metadata['max_context']} tokens) exceeded")
+
 
 class InstantEmptySubmitTestModel(BaseModel):
     MODELS = {"instant_empty_submit": {}}

@@ -1,6 +1,9 @@
-# SWE-Agent-Codegeex
+<p align="center">
+  <a href="https://www.swe-agent.com/">
+    <img src="assets/swe-agent-banner.png" alt="swe-agent.com" />
+  </a>
+</p>
 
-Forked from SWE-Agent so that I can run additional experiments for CodeGeeX. 
 
 <p align="center">
   <a href="https://swe-agent.com"><strong>Website & Demo</strong></a>&nbsp; | &nbsp;
