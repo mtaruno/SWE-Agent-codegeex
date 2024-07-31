@@ -1,7 +1,4 @@
-'''
-This file is what we use to query CodeGeeX 4. 
 
-'''
 import json
 import gzip
 import fire
@@ -71,7 +68,6 @@ def main():
     try:
         code = generate(prompt, url)
         logger.info(code)
-        print(code)
 
     except Exception as e:
         logger.error(e)

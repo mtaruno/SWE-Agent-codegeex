@@ -193,3 +193,4 @@ trajectories/**
 
 # PyCharm
 .idea/
+.aider*
