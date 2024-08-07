@@ -1,0 +1,110 @@
+FILE_LOCALIZATION:
+  Please look through the following GitHub problem description and Repository structure and provide a list of files that one would need to edit to fix the problem.
+
+  ### GitHub Problem Description ###
+  {problem_statement}
+
+  ###
+
+  ### Repository Structure ###
+  {structure}
+
+  ###
+
+  Task:
+  Please only provide the full path and return at most 5 files. The returned files should be separated by new lines ordered by most to least important and wrapped with ```
+  Pay attention that the response should be on the same format as the following example:
+  ```
+  file1.py
+  file2.py
+  ```
+
+  Return the files single response. Do not return any other information.
+
+CLASS_FUNC_LOCALIZATION:
+  """"
+  Please review the following GitHub problem description and relevant files, and provide a set of locations that need to be edited to fix the issue.
+  The locations can be specified as class, method, or function names that require modification.
+
+  ### GitHub Problem Description ###
+  {problem_statement}
+
+  ###
+  {file_contents}
+
+  ###
+
+  Task:
+  Please provide the complete set of locations as either a class name, a function name, or a variable name. Note that for each function or class listed, it needs to be under a file (give the full path to the file ). Note that if you include a class, you do NOT need to list its specific methods. You can include either the entire class or don't include the class name and instead include specific methods in the class. Pay attention that the response should be on the same format as the following example:
+  ```
+  path: path1/file1.py
+  function: my_function1
+  class: MyClass1
+
+  path: path2/file2.py
+  function: MyClass2.my_method
+  class: MyClass3
+
+  path: path3/file3.py
+  function: my_function2
+  ```
+
+  Return multiple files and locations in a single response if need. Do not return any other information.
+  """
+      obtain_relevant_functions_from_compressed_files_prompt = """
+  Please look through the following GitHub problem description and the skeleton of relevant files.
+  Provide a thorough set of locations that need inspection or editing to fix the problem, including directly related areas as well as any potentially related functions and classes.
+
+  ### GitHub Problem Description ###
+  {problem_statement}
+
+  ###
+  {file_contents}
+
+  ###
+
+  Task:
+  Please provide the complete set of locations as either a class name, a function name, or a variable name. Note that for each function or class listed, it needs to be under a file (give the full path to the file ). Note that if you include a class, you do NOT need to list its specific methods. You can include either the entire class or don't include the class name and instead include specific methods in the class. Pay attention that the response should be on the same format as the following example:
+  ```
+  path: path1/file1.py
+  class: MyClass1
+
+  path: path2/file2.py
+  function: MyClass2.my_method
+
+  path: path3/file3.py
+  function: my_function
+  ```
+
+  Return multiple files in a single response if need. Do not return any other information.
+  
+  Please look through the following GitHub Problem Description and the Skeleton of Relevant Files.
+  Identify all locations that need inspection or editing to fix the problem, including directly related areas as well as any potentially related global variables, functions, and classes.
+  For each location you provide, either give the name of the class, the name of a method in a class, the name of a function, or the name of a global variable.
+
+  ### GitHub Problem Description ###
+  {problem_statement}
+
+  ### Skeleton of Relevant Files ###
+  {file_contents}
+
+  ###
+  Task:
+  Please provide the complete set of locations as either a class name, a function name, or a variable name. Note that if you include a class, you do NOT need to list its specific methods. You can include either the entire class or don't include the class name and instead include specific methods in the class. Pay attention that the response should be on the same format as the following example:
+  ```
+  path: path1/file1.py
+  function: my_function_1
+  class: MyClass1
+  function: MyClass2.my_method
+
+  path: path2/file2.py
+  variable: my_var
+  function: MyClass3.my_method
+
+  path: path3/file3.py
+  function: my_function_2
+  function: my_function_3
+  function: MyClass4.my_method_1
+  class: MyClass5
+  ```
+  Return multiple files and locations in a single response if need. Do not return any other information.
