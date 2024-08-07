@@ -42,7 +42,7 @@ search_dir() {
         echo "More than $num_files files matched for \"$search_term\" in $dir. Please narrow your search."
         return
     fi
-
+    
     echo "Found $num_matches matches for \"$search_term\" in $dir:"
     echo "$matches" | awk '{$2=$2; gsub(/^\.+\/+/, "./", $2); print $2 " ("$1" matches)"}'
     echo "End of matches for \"$search_term\" in $dir"
@@ -95,7 +95,7 @@ search_file() {
     fi
     # Calculate total number of matches
     local num_matches=$(echo "$matches" | wc -l | awk '{$1=$1; print $0}')
-
+    
     # calculate total number of lines matched
     local num_lines=$(echo "$matches" | cut -d: -f1 | sort | uniq | wc -l | awk '{$1=$1; print $0}')
     # if num_lines is > 100, print an error
@@ -153,49 +153,3 @@ find_file() {
     echo "Found $num_matches matches for \"$file_name\" in $dir:"
     echo "$matches" | awk '{print $0}'
 }
-
-# @yaml
-# signature: find <search_level> [<query>]
-# docstring: 
-# arguments:
-#   query:
-#       type: string
-#       description: the model will decide what is useful based on this query text, which may include issue text
-#       required: true   
-#   search_level:
-#       type: string
-#       description: this can either be function, class, or chunk. The chunk is determined based on the the AST parsing
-find() {
-    # Check if the correct number of arguments are provided
-    if [ $# -ne 2 ]; then
-        echo "Usage: find <search_level> <query>"
-        return 1
-    fi
-
-    # Assign arguments to variables
-    local search_level="$1"
-    local query="$2"
-
-    # Define valid search levels
-    local valid_search_levels=("file" "class_func" "lines")
-
-    # Check if the provided search level is valid
-    if [[ ! " ${valid_search_levels[@]} " =~ " ${search_level} " ]]; then
-        echo "Invalid search level. Valid options are: function, class, chunk."
-        return 1
-    fi
-
-    # Call the Python script with the provided arguments
-    python _retriever.py "$search_level" "$query"
-
-    # Check if the Python script executed successfully
-    if [ $? -ne 0 ]; then
-        echo "Error: bm25_retriever.py failed to execute."
-        return 1
-    fi
-}
-
-# If the script is called directly, run the find function with the provided arguments
-if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
-    find "$@"
-fi

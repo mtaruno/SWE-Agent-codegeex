@@ -17,6 +17,7 @@ from tenacity import (
     stop_after_attempt,
     wait_random_exponential,
 )
+<<<<<<< HEAD
 
 from sweagent.agent.commands import Command
 from sweagent.utils.config import keys_config
@@ -25,6 +26,40 @@ from sweagent.utils.log import get_logger
 logger = get_logger("api_models")
 
 _MAX_RETRIES = keys_config.get("SWE_AGENT_MODEL_MAX_RETRIES", 10)
+=======
+
+from typing import Optional, Union
+
+from sweagent.agent.codegeex4 import generate
+import yaml
+
+logger = logging.getLogger("api_models")
+>>>>>>> refs/remotes/origin/main
+
+# Configure the logging system to write to a file
+
+# Set the logging level
+logger.setLevel(logging.INFO)
+
+# Ensure all handlers are flushed and closed
+for handler in logger.handlers:
+    handler.close()
+    logger.removeHandler(handler)
+
+# Create a file handler
+file_handler = logging.FileHandler('/Users/matthewtaruno/Library/Mobile Documents/com~apple~CloudDocs/Dev/SWE-agent/sweagent/agent/app.log', mode='w')
+
+# Create a logging format
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+file_handler.setFormatter(formatter)
+
+# Add the file handler to the logger
+logger.addHandler(file_handler)
+
+# Optional: also output to console
+# console_handler = logging.StreamHandler()
+# console_handler.setFormatter(formatter)
+# logger.addHandler(console_handler)
 
 
 @dataclass(frozen=True)
@@ -101,6 +136,7 @@ class BaseModel:
             **self.MODELS,
         }
         if args.model_name in MODELS:
+            logging.debug("Using model metadata from MODELS")
             self.model_metadata = MODELS[args.model_name]
         elif args.model_name.startswith("ft:"):
             ft_model = args.model_name.split(":")[1]
@@ -239,9 +275,13 @@ class OpenAIModel(BaseModel):
         "gpt4-legacy": "gpt-4-0613",
         "gpt4-0125": "gpt-4-0125-preview",
         "gpt3-0125": "gpt-3.5-turbo-0125",
+<<<<<<< HEAD
         "gpt4-turbo": "gpt-4-turbo-2024-04-09",
         "gpt4o": "gpt-4o-2024-05-13",
         "gpt-4o-mini": "gpt-4o-mini-2024-07-18",
+=======
+        "gpt4-turbo": "gpt-4-turbo-2024-04-09"
+>>>>>>> refs/remotes/origin/main
     }
 
     def __init__(self, args: ModelArguments, commands: list[Command]):
@@ -875,6 +915,180 @@ class ReplayModel(BaseModel):
             self._next_replay()
 
         return action
+    
+
+class GLMModel(BaseModel):
+    MODELS = {
+        "glm-4": { # temporarily using GPT-3.5 stats 
+            "max_context": 16385,
+            "cost_per_input_token": 5e-07,
+            "cost_per_output_token": 1.5e-06,
+        },
+    }
+
+    SHORTCUTS = {
+        "glm-4": 'glm-4'
+    }
+
+    def __init__(self, args: ModelArguments, commands: list[Command]):
+        super().__init__(args, commands)
+
+        # Set OpenAI key
+        cfg = config.Config(os.path.join(os.getcwd(), "keys.cfg"))
+        api_base_url: Optional[str] = cfg.get("OPENAI_API_BASE_URL", None)
+        self.client = OpenAI(api_key=cfg["OPENAI_API_KEY"], base_url=api_base_url)
+
+    def history_to_messages(
+        self, history: list[dict[str, str]], is_demonstration: bool = False
+    ) -> Union[str, list[dict[str, str]]]:
+        """
+        Create `messages` by filtering out all keys except for role/content per `history` turn
+        """
+        # Remove system messages if it is a demonstration
+        if is_demonstration:
+            history = [entry for entry in history if entry["role"] != "system"]
+            return '\n'.join([entry["content"] for entry in history])
+        # Return history components with just role, content fields
+        return [
+            {k: v for k, v in entry.items() if k in ["role", "content"]}
+            for entry in history
+        ]
+
+    @retry(
+        wait=wait_random_exponential(min=1, max=15),
+        reraise=True,
+        stop=stop_after_attempt(3),
+        retry=retry_if_not_exception_type((CostLimitExceededError, RuntimeError)),
+    )
+    def query(self, history: list[dict[str, str]]) -> str:
+        """
+        Query the OpenAI API with the given `history` and return the response.
+        """
+        try:
+
+            response = self.client.chat.completions.create(
+                messages=self.history_to_messages(history),
+                model=self.api_model,
+                temperature=0.95,# self.args.temperature,
+                top_p=0.7 # self.args.top_p
+            )
+            # saving messages to a file
+            messages = self.history_to_messages(history)
+            with open("glm_messages.jsonl", "w") as f:
+                for message in messages: 
+                    json_string = json.dumps(message)
+                    f.write(json_string)
+
+        except BadRequestError as e:
+            print("Bad Request Error! Nyawwwwwwwwwwwwww. Error: ")
+            print(e)
+
+            raise CostLimitExceededError(f"Context window ({self.model_metadata['max_context']} tokens) exceeded")
+        # Calculate + update costs, return response
+        input_tokens = response.usage.prompt_tokens
+        output_tokens = response.usage.completion_tokens
+        self.update_stats(input_tokens, output_tokens)
+        return response.choices[0].message.content
+    
+
+class codegeexModel(BaseModel):
+    MODELS = {
+    "codegeex-4": { # temporarily using GPT-3.5 stats 
+        "max_context": 16385,
+        "cost_per_input_token": 5e-07,
+        "cost_per_output_token": 1.5e-06,
+    },
+    }
+
+    SHORTCUTS = {
+        "codegeex-4": 'codegeex-4'
+    }
+
+    
+
+    def __init__(self, args: ModelArguments, commands: list[Command]):
+        super().__init__(args, commands)
+        self.RUN = {}
+        
+    def messages_to_prompt(self, messages):
+        """
+        Formatting messages to prompt for codegeex requests API. 
+        """
+        formatted_prompt = ""
+        for entry in messages:
+            logger.info(f"Entry role is {entry['role']}")
+            if entry['content'] == None: 
+                logger.warning("Skipping none entry")
+                continue
+
+            # if entry['role'] == 'system':
+            #     logger.info("Switched from system to assistant")
+            #     entry['role'] = 'assistant'
+            
+            formatted_prompt += f"<|{entry['role']}|>\n{entry['content']}\n"
+        return formatted_prompt
+
+    def history_to_messages(
+        self, history: list[dict[str, str]], is_demonstration: bool = False
+    ) -> Union[str, list[dict[str, str]]]:
+        """
+        Create `messages` by filtering out all keys except for role/content per `history` turn
+        """
+        # Remove system messages if it is a demonstration
+        if is_demonstration:
+            history = [entry for entry in history if entry["role"] != "system"]
+            return '\n'.join([entry["content"] for entry in history])
+        # Return history components with just role, content fields
+
+        return [
+            {k: v for k, v in entry.items() if k in ["role", "content"]}
+            for entry in history
+        ]
+
+    @retry(
+        wait=wait_random_exponential(min=1, max=15),
+        reraise=True,
+        stop=stop_after_attempt(3),
+        retry=retry_if_not_exception_type((CostLimitExceededError, RuntimeError)),
+    )
+    def query(self, history: list[dict[str, str]]) -> str:
+        """
+        Query the CodeGeeX API with the given `history` and return the response.
+        """
+        try:
+            messages = self.history_to_messages(history)
+            prompt = self.messages_to_prompt(messages)
+            temperature = self.args.temperature
+            top_p = self.args.top_p
+
+            
+            url = "http://172.18.64.110:9090/v1/completions"
+
+
+            logger.warning("In the codegeex4 file we are just using temperature and top_p of 1 currently")
+
+
+            response = generate(
+                prompt,
+                url, 
+                temperature = self.args.temperature,
+                top_p = self.args.top_p
+            )
+            # return response - TODO: Calculate + update costs,       
+
+            with open("codegeex_inspect/agent_prompt.yaml", "w") as f:
+                yaml.dump(prompt, f, default_flow_style=True, allow_unicode=True)
+
+
+            return response
+    
+        except Exception as e:
+            print("Error: ")
+            print(e)
+        except BadRequestError as e:
+            print("Bad Request Error! Nyawwwwwwwwwwwwww. Error: ")
+            print(e)
+            raise CostLimitExceededError(f"Context window ({self.model_metadata['max_context']} tokens) exceeded")
 
 
 class InstantEmptySubmitTestModel(BaseModel):
@@ -929,6 +1143,11 @@ def get_model(args: ModelArguments, commands: list[Command] | None = None):
         return TogetherModel(args, commands)
     elif args.model_name == "instant_empty_submit":
         return InstantEmptySubmitTestModel(args, commands)
+    elif args.model_name.startswith("glm"):
+        return GLMModel(args, commands)
+    elif args.model_name.startswith("codegeex"):
+        logger.info("Entering CodeGeeX Model") 
+        return codegeexModel(args, commands)
     else:
         msg = f"Invalid model name: {args.model_name}"
         raise ValueError(msg)
