@@ -12,9 +12,8 @@
   <a href="https://arxiv.org/abs/2405.15793"><strong>Preprint</strong></a>
 </p>
 
-**SWE-agent turns LMs (e.g. GPT-4) into software engineering agents that can resolve issues in real GitHub repositories.**
 
-On [SWE-bench](https://github.com/princeton-nlp/SWE-bench), SWE-agent resolves 12.47% of issues, achieving the state-of-the-art performance on the full test set.
+## Tree Agent
 
 We accomplish our results by designing simple LM-centric commands and feedback formats to make it easier for the LM to browse the repository, view, edit and execute code files. We call this an **Agent-Computer Interface (ACI)**.
 Read more about it in our [paper](https://arxiv.org/abs/2405.15793)!
@@ -53,8 +52,10 @@ use, and configure SWE-agent:
 
 Contact person: [John Yang](https://john-b-yang.github.io/) and [Carlos E. Jimenez](http://www.carlosejimenez.com/) (Email: johnby@stanford.edu, carlosej@princeton.edu).
 
+
 ## 📝 Citation <a name="citation"></a>
-If you found this work helpful, please consider citing it using the following:
+
+Also, if you are going to use this work, please also cite their work: 
 ```
 @misc{yang2024sweagent,
       title={SWE-agent: Agent-Computer Interfaces Enable Automated Software Engineering},
@@ -65,6 +66,7 @@ If you found this work helpful, please consider citing it using the following:
       primaryClass={cs.SE}
 }
 ```
+
 
 ## 🪪 License <a name="license"></a>
 MIT. Check `LICENSE`.
