@@ -1,14 +1,120 @@
+import json
+import os
 import logging
 from abc import ABC, abstractmethod
-from agentless.repair.repair import construct_topn_file_context
-from agentless.util.compress_file import get_skeleton
-from agentless.util.postprocess_data import extract_code_blocks, extract_locs_for_files
-from agentless.util.preprocess_data import (
+from repair.repair import construct_topn_file_context
+from util.compress_file import get_skeleton
+from util.postprocess_data import extract_code_blocks, extract_locs_for_files
+from util.preprocess_data import (
     get_full_file_paths_and_classes_and_functions,
     get_repo_files,
     line_wrap_content,
     show_project_structure,
 )
+from util._repo_structure.get_repo_structure import (
+    clone_repo,
+    get_project_structure_from_scratch,
+)
+
+
+
+class Agentless: 
+
+    def __init__(self): 
+        ...
+
+    def localize_files(self):
+
+        # get structure
+        structure = None # TODO: Retrieve project structure 
+        filter_none_python(structure)
+        # some basic filtering steps
+        # filter out test files (unless its pytest)
+        # if not d["instance_id"].startswith("pytest"):
+        #     filter_out_test_files(structure)
+
+        found_files = []
+
+        additional_artifact_loc_file = None
+        additional_artifact_loc_related = None
+        additional_artifact_loc_edit_location = None
+        file_traj, related_loc_traj, edit_loc_traj = {}, {}, {}
+
+        fl = LLMFL(
+            d["instance_id"],
+            structure,
+            problem_statement,
+        )
+        found_files, additional_artifact_loc_file, file_traj = fl.localize(
+            mock=args.mock
+        )
+
+    def localize_class_func(self, suspicious_files): 
+        # related class, functions, global var localization
+        found_related_locs = []
+        
+        if len(suspicious_files) != 0:
+            pred_files = suspicious_files[: args.top_n]
+            fl = LLMFL(
+                d["instance_id"],
+                structure,
+                problem_statement,
+            )
+
+            additional_artifact_loc_related = []
+            found_related_locs = []
+            related_loc_traj = {}
+
+            if args.compress:
+                (
+                    found_related_locs,
+                    additional_artifact_loc_related,
+                    related_loc_traj,
+                ) = fl.localize_function_from_compressed_files(
+                    pred_files,
+                    mock=args.mock,
+                )
+                additional_artifact_loc_related = [additional_artifact_loc_related]
+            else:
+                assert False, "Not implemented yet."
+
+    def localize_lines(self, suspicious_files):
+    
+        # Only supports the following args for now
+        found_edit_locs = []
+        pred_files = found_files[: args.top_n]
+        fl = LLMFL(
+            instance_id,
+            structure,
+            problem_statement,
+        )
+        coarse_found_locs = {}
+        for i, pred_file in enumerate(pred_files):
+            if len(found_related_locs) > i:
+                coarse_found_locs[pred_file] = found_related_locs[i]
+        (
+            found_edit_locs,
+            additional_artifact_loc_edit_location,
+            edit_loc_traj,
+        ) = fl.localize_line_from_coarse_function_locs(
+            pred_files,
+            coarse_found_locs,
+            context_window=args.context_window,
+            add_space=args.add_space,
+            no_line_number=args.no_line_number,
+            sticky_scroll=args.sticky_scroll,
+            mock=args.mock,
+            temperature=args.temperature,
+            num_samples=args.num_samples,
+        )
+
+        additional_artifact_loc_edit_location = [
+            additional_artifact_loc_edit_location
+        ]
+
+
+
+
 
 class FL(ABC):
     def __init__(self, instance_id, structure, problem_statement, **kwargs):
@@ -23,191 +129,191 @@ class FL(ABC):
 
 class LLMFL(FL):
     obtain_relevant_files_prompt = """
-    Please look through the following GitHub problem description and Repository structure and provide a list of files that one would need to edit to fix the problem.
+Please look through the following GitHub problem description and Repository structure and provide a list of files that one would need to edit to fix the problem.
 
-    ### GitHub Problem Description ###
-    {problem_statement}
+### GitHub Problem Description ###
+{problem_statement}
 
-    ###
+###
 
-    ### Repository Structure ###
-    {structure}
+### Repository Structure ###
+{structure}
 
-    ###
+###
 
-    Please only provide the full path and return at most 5 files.
-    The returned files should be separated by new lines ordered by most to least important and wrapped with ```
-    For example:
-    ```
-    file1.py
-    file2.py
-    ```
-    """
+Please only provide the full path and return at most 5 files.
+The returned files should be separated by new lines ordered by most to least important and wrapped with ```
+For example:
+```
+file1.py
+file2.py
+```
+"""
 
     obtain_relevant_code_prompt = """
-    Please look through the following GitHub problem description and file and provide a set of locations that one would need to edit to fix the problem.
+Please look through the following GitHub problem description and file and provide a set of locations that one would need to edit to fix the problem.
 
-    ### GitHub Problem Description ###
-    {problem_statement}
+### GitHub Problem Description ###
+{problem_statement}
 
-    ###
+###
 
-    ### File: {file_name} ###
-    {file_content}
+### File: {file_name} ###
+{file_content}
 
-    ###
+###
 
-    Please provide either the class, the function name or line numbers that need to be edited.
-    ### Example 1:
-    ```
-    class: MyClass
-    ```
-    ### Example 2:
-    ```
-    function: my_function
-    ```
-    ### Example 3:
-    ```
-    line: 10
-    line: 24
-    ```
+Please provide either the class, the function name or line numbers that need to be edited.
+### Example 1:
+```
+class: MyClass
+```
+### Example 2:
+```
+function: my_function
+```
+### Example 3:
+```
+line: 10
+line: 24
+```
 
-    Return just the location(s)
-    """
+Return just the location(s)
+"""
     file_content_template = """
-    ### File: {file_name} ###
-    {file_content}
-    """
+### File: {file_name} ###
+{file_content}
+"""
     file_content_in_block_template = """
-    ### File: {file_name} ###
-    ```python
-    {file_content}
-    ```
-    """
+### File: {file_name} ###
+```python
+{file_content}
+```
+"""
     obtain_relevant_code_combine_top_n_prompt = """
-    Please review the following GitHub problem description and relevant files, and provide a set of locations that need to be edited to fix the issue.
-    The locations can be specified as class names, function or method names, or exact line numbers that require modification.
+Please review the following GitHub problem description and relevant files, and provide a set of locations that need to be edited to fix the issue.
+The locations can be specified as class names, function or method names, or exact line numbers that require modification.
 
-    ### GitHub Problem Description ###
-    {problem_statement}
+### GitHub Problem Description ###
+{problem_statement}
 
-    ###
-    {file_contents}
+###
+{file_contents}
 
-    ###
+###
 
-    Please provide the class name, function or method name, or the exact line numbers that need to be edited.
-    ### Examples:
-    ```
-    full_path1/file1.py
-    line: 10
-    class: MyClass1
-    line: 51
+Please provide the class name, function or method name, or the exact line numbers that need to be edited.
+### Examples:
+```
+full_path1/file1.py
+line: 10
+class: MyClass1
+line: 51
 
-    full_path2/file2.py
-    function: MyClass2.my_method
-    line: 12
+full_path2/file2.py
+function: MyClass2.my_method
+line: 12
 
-    full_path3/file3.py
-    function: my_function
-    line: 24
-    line: 156
-    ```
+full_path3/file3.py
+function: my_function
+line: 24
+line: 156
+```
 
-    Return just the location(s)
-    """
+Return just the location(s)
+"""
     obtain_relevant_code_combine_top_n_no_line_number_prompt = """
-    Please review the following GitHub problem description and relevant files, and provide a set of locations that need to be edited to fix the issue.
-    The locations can be specified as class, method, or function names that require modification.
+Please review the following GitHub problem description and relevant files, and provide a set of locations that need to be edited to fix the issue.
+The locations can be specified as class, method, or function names that require modification.
 
-    ### GitHub Problem Description ###
-    {problem_statement}
+### GitHub Problem Description ###
+{problem_statement}
 
-    ###
-    {file_contents}
+###
+{file_contents}
 
-    ###
+###
 
-    Please provide the class, method, or function names that need to be edited.
-    ### Examples:
-    ```
-    full_path1/file1.py
-    function: my_function1
-    class: MyClass1
+Please provide the class, method, or function names that need to be edited.
+### Examples:
+```
+full_path1/file1.py
+function: my_function1
+class: MyClass1
 
-    full_path2/file2.py
-    function: MyClass2.my_method
-    class: MyClass3
+full_path2/file2.py
+function: MyClass2.my_method
+class: MyClass3
 
-    full_path3/file3.py
-    function: my_function2
-    ```
+full_path3/file3.py
+function: my_function2
+```
 
-    Return just the location(s)
-    """
+Return just the location(s)
+"""
     obtain_relevant_functions_from_compressed_files_prompt = """
-    Please look through the following GitHub problem description and the skeleton of relevant files.
-    Provide a thorough set of locations that need inspection or editing to fix the problem, including directly related areas as well as any potentially related functions and classes.
+Please look through the following GitHub problem description and the skeleton of relevant files.
+Provide a thorough set of locations that need inspection or editing to fix the problem, including directly related areas as well as any potentially related functions and classes.
 
-    ### GitHub Problem Description ###
-    {problem_statement}
+### GitHub Problem Description ###
+{problem_statement}
 
-    ###
-    {file_contents}
+###
+{file_contents}
 
-    ###
+###
 
-    Please provide locations as either the class or the function name.
-    ### Examples:
-    ```
-    full_path1/file1.py
-    class: MyClass1
+Please provide locations as either the class or the function name.
+### Examples:
+```
+full_path1/file1.py
+class: MyClass1
 
-    full_path2/file2.py
-    function: MyClass2.my_method
+full_path2/file2.py
+function: MyClass2.my_method
 
-    full_path3/file3.py
-    function: my_function
-    ```
+full_path3/file3.py
+function: my_function
+```
 
-    Return just the location(s)
-    """
+Return just the location(s)
+"""
     obtain_relevant_functions_and_vars_from_compressed_files_prompt_more = """
-    Please look through the following GitHub Problem Description and the Skeleton of Relevant Files.
-    Identify all locations that need inspection or editing to fix the problem, including directly related areas as well as any potentially related global variables, functions, and classes.
-    For each location you provide, either give the name of the class, the name of a method in a class, the name of a function, or the name of a global variable.
+Please look through the following GitHub Problem Description and the Skeleton of Relevant Files.
+Identify all locations that need inspection or editing to fix the problem, including directly related areas as well as any potentially related global variables, functions, and classes.
+For each location you provide, either give the name of the class, the name of a method in a class, the name of a function, or the name of a global variable.
 
-    ### GitHub Problem Description ###
-    {problem_statement}
+### GitHub Problem Description ###
+{problem_statement}
 
-    ### Skeleton of Relevant Files ###
-    {file_contents}
+### Skeleton of Relevant Files ###
+{file_contents}
 
-    ###
+###
 
-    Please provide the complete set of locations as either a class name, a function name, or a variable name.
-    Note that if you include a class, you do not need to list its specific methods.
-    You can include either the entire class or don't include the class name and instead include specific methods in the class.
-    ### Examples:
-    ```
-    full_path1/file1.py
-    function: my_function_1
-    class: MyClass1
-    function: MyClass2.my_method
+Please provide the complete set of locations as either a class name, a function name, or a variable name.
+Note that if you include a class, you do not need to list its specific methods.
+You can include either the entire class or don't include the class name and instead include specific methods in the class.
+### Examples:
+```
+full_path1/file1.py
+function: my_function_1
+class: MyClass1
+function: MyClass2.my_method
 
-    full_path2/file2.py
-    variable: my_var
-    function: MyClass3.my_method
+full_path2/file2.py
+variable: my_var
+function: MyClass3.my_method
 
-    full_path3/file3.py
-    function: my_function_2
-    function: my_function_3
-    function: MyClass4.my_method_1
-    class: MyClass5
-    ```
+full_path3/file3.py
+function: my_function_2
+function: my_function_3
+function: MyClass4.my_method_1
+class: MyClass5
+```
 
-    Return just the locations.
-    """
+Return just the locations.
+"""
 
     def __init__(self, instance_id, structure, problem_statement, **kwargs):
         super().__init__(instance_id, structure, problem_statement)
@@ -225,6 +331,12 @@ class LLMFL(FL):
             create_chatgpt_config,
             num_tokens_from_messages,
             request_chatgpt_engine,
+        )
+
+
+        from agentless.util.api_requests import (
+            create_codegeex_config,
+            request_codegeex_engine
         )
 
         message = self.obtain_relevant_files_prompt.format(
@@ -296,12 +408,17 @@ class LLMFL(FL):
     def localize_function_for_files(
         self, file_names, mock=False
     ) -> tuple[list, dict, dict]:
-        from util.api_requests import (
-            create_chatgpt_config,
-            num_tokens_from_messages,
-            request_chatgpt_engine,
-        )
+        # from agentless.util.api_requests import (
+        #     create_chatgpt_config,
+        #     num_tokens_from_messages,
+        #     request_chatgpt_engine,
+        # )
 
+        from agentless.util.api_requests import (
+            create_codegeex_config,
+            num_tokens_from_messages,
+            request_codegeex_engine
+        )
         files, classes, functions = get_full_file_paths_and_classes_and_functions(
             self.structure
         )
@@ -390,12 +507,6 @@ class LLMFL(FL):
             request_chatgpt_engine,
         )
 
-        from agentless.util.api_requests import (
-            create_codegeex_config,
-            num_tokens_from_messages,
-            request_codegeex_engine
-        )
-
         file_contents = get_repo_files(self.structure, file_names)
         compressed_file_contents = {
             fn: get_skeleton(code) for fn, code in file_contents.items()
@@ -436,13 +547,6 @@ class LLMFL(FL):
         ret = request_chatgpt_engine(config)
         raw_output = ret.choices[0].message.content
 
-        # config = create_codegeex_config(
-        #     message=message,
-        #     max_tokens=self.max_tokens,
-        #     temperature=0,
-        # )
-        # ret = request_codegeex_engine(config)
-        # raw_output = ret.choices[0].message.content
         traj = {
             "prompt": message,
             "response": raw_output,
@@ -479,7 +583,7 @@ class LLMFL(FL):
         num_samples: int = 1,
         mock=False,
     ):
-        from agentless.util.api_requests import (
+        from util.api_requests import (
             create_chatgpt_config,
             num_tokens_from_messages,
             request_chatgpt_engine,

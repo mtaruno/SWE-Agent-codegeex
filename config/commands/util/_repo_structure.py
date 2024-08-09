@@ -1,3 +1,8 @@
+
+'''
+Utilities for retreiving the repo structure.
+'''
+
 import ast
 import os
 import subprocess
@@ -20,7 +25,6 @@ repo_to_top_folder = {
     "pallets/flask": "flask",
 }
 
-
 def checkout_commit(repo_path, commit_id):
     """Checkout the specified commit in the given local git repository.
     :param repo_path: Path to the local git repository
@@ -36,7 +40,6 @@ def checkout_commit(repo_path, commit_id):
         print(f"An error occurred while running git command: {e}")
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
-
 
 def clone_repo(repo_name, repo_playground):
     try:
@@ -87,7 +90,6 @@ def get_project_structure_from_scratch(
         "instance_id": instance_id,
     }
     return d
-
 
 def parse_python_file(file_path, file_content=None):
     """Parse a Python file to extract class and function definitions with their line numbers.

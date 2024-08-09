@@ -17,16 +17,6 @@ from tenacity import (
     stop_after_attempt,
     wait_random_exponential,
 )
-<<<<<<< HEAD
-
-from sweagent.agent.commands import Command
-from sweagent.utils.config import keys_config
-from sweagent.utils.log import get_logger
-
-logger = get_logger("api_models")
-
-_MAX_RETRIES = keys_config.get("SWE_AGENT_MODEL_MAX_RETRIES", 10)
-=======
 
 from typing import Optional, Union
 
@@ -34,7 +24,6 @@ from sweagent.agent.codegeex4 import generate
 import yaml
 
 logger = logging.getLogger("api_models")
->>>>>>> refs/remotes/origin/main
 
 # Configure the logging system to write to a file
 
@@ -275,13 +264,7 @@ class OpenAIModel(BaseModel):
         "gpt4-legacy": "gpt-4-0613",
         "gpt4-0125": "gpt-4-0125-preview",
         "gpt3-0125": "gpt-3.5-turbo-0125",
-<<<<<<< HEAD
-        "gpt4-turbo": "gpt-4-turbo-2024-04-09",
-        "gpt4o": "gpt-4o-2024-05-13",
-        "gpt-4o-mini": "gpt-4o-mini-2024-07-18",
-=======
         "gpt4-turbo": "gpt-4-turbo-2024-04-09"
->>>>>>> refs/remotes/origin/main
     }
 
     def __init__(self, args: ModelArguments, commands: list[Command]):
