@@ -2,7 +2,6 @@ import json
 import os
 import logging
 from abc import ABC, abstractmethod
-from repair.repair import construct_topn_file_context
 from util.compress_file import get_skeleton
 from util.postprocess_data import extract_code_blocks, extract_locs_for_files
 from util.preprocess_data import (
@@ -10,53 +9,53 @@ from util.preprocess_data import (
     get_repo_files,
     line_wrap_content,
     show_project_structure,
+    filter_none_python
 )
-from util._repo_structure.get_repo_structure import (
-    clone_repo,
-    get_project_structure_from_scratch,
-)
-
-
+from util._repo_structure import create_structure
+# import argparse
+# parser = argparse.ArgumentParser(description="localization")
+# parser.add_argument('--name', type=str, required=True, help='Your name')
+# parser.add_argument('--age', type=int, required=True, help='Your age')
+# args = parser.parse_args()
+# print(f"Hello, {args.name}! You are {args.age} years old.")
 
 class Agentless: 
 
-    def __init__(self): 
-        ...
+    def __init__(self, problem_statement): 
+        # problem statement is given by the LLM as "issue_text"
+        self.problem_statement = problem_statement
+        self.structure = create_structure(".")
+
 
     def localize_files(self):
 
         # get structure
-        structure = None # TODO: Retrieve project structure 
-        filter_none_python(structure)
-        # some basic filtering steps
-        # filter out test files (unless its pytest)
-        # if not d["instance_id"].startswith("pytest"):
-        #     filter_out_test_files(structure)
+        filter_none_python(self.structure)
+        # filter_out_test_files(structure) #NOTE: should only do this for non pytest files
 
         found_files = []
-
         additional_artifact_loc_file = None
-        additional_artifact_loc_related = None
-        additional_artifact_loc_edit_location = None
-        file_traj, related_loc_traj, edit_loc_traj = {}, {}, {}
+        file_traj = {}
 
         fl = LLMFL(
-            d["instance_id"],
-            structure,
-            problem_statement,
+            self.structure,
+            self.problem_statement,
         )
-        found_files, additional_artifact_loc_file, file_traj = fl.localize(
-            mock=args.mock
-        )
+        found_files, additional_artifact_loc_file, file_traj = fl.localize()
 
     def localize_class_func(self, suspicious_files): 
+        related_loc_traj = {}
+        additional_artifact_loc_related = None
+
         # related class, functions, global var localization
         found_related_locs = []
-        
+
+
+        structure = None 
+
         if len(suspicious_files) != 0:
             pred_files = suspicious_files[: args.top_n]
             fl = LLMFL(
-                d["instance_id"],
                 structure,
                 problem_statement,
             )
@@ -78,11 +77,15 @@ class Agentless:
             else:
                 assert False, "Not implemented yet."
 
-    def localize_lines(self, suspicious_files):
-    
+    def localize_lines(self, suspicious_files, top_n, found_related_locs):
+
+        edit_loc_traj = {}
+        additional_artifact_loc_edit_location = None
+
+
         # Only supports the following args for now
         found_edit_locs = []
-        pred_files = found_files[: args.top_n]
+        pred_files = found_files[:top_n]
         fl = LLMFL(
             instance_id,
             structure,
@@ -111,15 +114,59 @@ class Agentless:
         additional_artifact_loc_edit_location = [
             additional_artifact_loc_edit_location
         ]
+    
 
 
+def construct_topn_file_context(
+    file_to_locs,
+    pred_files,
+    file_contents,
+    structure,
+    context_window: int,
+    loc_interval: bool = True,
+    fine_grain_loc_only: bool = False,
+    add_space: bool = False,
+    sticky_scroll: bool = False,
+    no_line_number: bool = True,
+):
+    """Concatenate provided locations to form a context.
+
+    loc: {"file_name_1": ["loc_str_1"], ...}
+    """
+    file_loc_intervals = dict()
+    topn_content = ""
+
+    for pred_file, locs in file_to_locs.items():
+        content = file_contents[pred_file]
+        line_locs, context_intervals = transfer_arb_locs_to_locs(
+            locs,
+            structure,
+            pred_file,
+            context_window,
+            loc_interval,
+            fine_grain_loc_only,
+            file_content=file_contents[pred_file] if pred_file in file_contents else "",
+        )
+
+        if len(line_locs) > 0:
+            # Note that if no location is predicted, we exclude this file.
+            file_loc_content = line_wrap_content(
+                content,
+                context_intervals,
+                add_space=add_space,
+                no_line_number=no_line_number,
+                sticky_scroll=sticky_scroll,
+            )
+            topn_content += f"### {pred_file}\n{file_loc_content}\n\n\n"
+            file_loc_intervals[pred_file] = context_intervals
+
+    return topn_content, file_loc_intervals
 
 
 
 class FL(ABC):
-    def __init__(self, instance_id, structure, problem_statement, **kwargs):
+    def __init__(self, instance_id, structure, problem_statement):
         self.structure = structure
-        self.instance_id = instance_id
         self.problem_statement = problem_statement
 
     @abstractmethod
@@ -128,27 +175,8 @@ class FL(ABC):
 
 
 class LLMFL(FL):
-    obtain_relevant_files_prompt = """
-Please look through the following GitHub problem description and Repository structure and provide a list of files that one would need to edit to fix the problem.
-
-### GitHub Problem Description ###
-{problem_statement}
-
-###
-
-### Repository Structure ###
-{structure}
-
-###
-
-Please only provide the full path and return at most 5 files.
-The returned files should be separated by new lines ordered by most to least important and wrapped with ```
-For example:
-```
-file1.py
-file2.py
-```
-"""
+    """This class does LLM File Localization"""
+  
 
     obtain_relevant_code_prompt = """
 Please look through the following GitHub problem description and file and provide a set of locations that one would need to edit to fix the problem.
@@ -314,9 +342,7 @@ class: MyClass5
 
 Return just the locations.
 """
-
     def __init__(self, instance_id, structure, problem_statement, **kwargs):
-        super().__init__(instance_id, structure, problem_statement)
         self.max_tokens = 300
 
     def _parse_model_return_lines(self, content: str) -> list[str]:
@@ -327,22 +353,17 @@ Return just the locations.
         found_files = []
 
         # lazy import, not sure if this is actually better?
-        from agentless.util.api_requests import (
+        from util.api_requests import (
             create_chatgpt_config,
             num_tokens_from_messages,
             request_chatgpt_engine,
-        )
-
-
-        from agentless.util.api_requests import (
-            create_codegeex_config,
-            request_codegeex_engine
         )
 
         message = self.obtain_relevant_files_prompt.format(
             problem_statement=self.problem_statement,
             structure=show_project_structure(self.structure).strip(),
         ).strip()
+
         print(f"prompting with message:\n{message}")
         print("=" * 80)
         if mock:
@@ -366,14 +387,6 @@ Return just the locations.
 
 
         ret = request_chatgpt_engine(config)
-
-        # config = create_codegeex_config(
-        # message=message,
-        # max_tokens=self.max_tokens,
-        # temperature=0,
-        # )
-
-        # ret = request_codegeex_engine(config)
         raw_output = ret.choices[0].message.content
         traj = {
             "prompt": message,
@@ -408,17 +421,12 @@ Return just the locations.
     def localize_function_for_files(
         self, file_names, mock=False
     ) -> tuple[list, dict, dict]:
-        # from agentless.util.api_requests import (
-        #     create_chatgpt_config,
-        #     num_tokens_from_messages,
-        #     request_chatgpt_engine,
-        # )
-
-        from agentless.util.api_requests import (
-            create_codegeex_config,
+        from util.api_requests import (
+            create_chatgpt_config,
             num_tokens_from_messages,
-            request_codegeex_engine
+            request_chatgpt_engine,
         )
+
         files, classes, functions = get_full_file_paths_and_classes_and_functions(
             self.structure
         )
@@ -456,11 +464,11 @@ Return just the locations.
         if mock:
             traj = {
                 "prompt": message,
-                # "usage": {
-                #     "prompt_tokens": num_tokens_from_messages(
-                #         message, "gpt-4o-2024-05-13"
-                #     ),
-                # },
+                "usage": {
+                    "prompt_tokens": num_tokens_from_messages(
+                        message, "gpt-4o-2024-05-13"
+                    ),
+                },
             }
             return [], {"raw_output_loc": ""}, traj
 
@@ -471,15 +479,7 @@ Return just the locations.
             batch_size=1,
             model="gpt-4o-2024-05-13",  # use gpt-4o for now.
         )
-
-        # config = create_codegeex_config(
-        #     message=message,
-        #     max_tokens=self.max_tokens,
-        #     temperature=0,
-        # )
-        
         ret = request_chatgpt_engine(config)
-        # ret = request_codegeex_engine(config)
 
         raw_output = ret.choices[0].message.content
         traj = {
@@ -501,7 +501,7 @@ Return just the locations.
         return model_found_locs_separated, {"raw_output_loc": raw_output}, traj
 
     def localize_function_from_compressed_files(self, file_names, mock=False):
-        from agentless.util.api_requests import (
+        from util.api_requests import (
             create_chatgpt_config,
             num_tokens_from_messages,
             request_chatgpt_engine,
@@ -628,16 +628,7 @@ Return just the locations.
             batch_size=num_samples,
             model="gpt-4o-2024-05-13",  # use gpt-4o for now.
         )
-        # config = create_codegeex_config(
-        #     message=message,
-        #     max_tokens=self.max_tokens,
-        #     temperature=temperature,
-        #     model="codegeex-4",
-        # )
-
         ret = request_chatgpt_engine(config)
-        # ret = request_codegeex_engine(config)
-
         raw_outputs = [choice.message.content for choice in ret.choices]
         traj = {
             "prompt": message,
@@ -683,3 +674,6 @@ Return just the locations.
             {"raw_output_loc": raw_outputs},
             traj,
         )
+    
+
+    
