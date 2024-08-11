@@ -161,7 +161,8 @@ def parse_python_file(file_path, file_content=None):
 
 
 def create_structure(directory_path):
-    """Create the structure of the repository directory by parsing Python files.
+    """ 这是最重要的函数    
+    Create the structure of the repository directory by parsing Python files.
     :param directory_path: Path to the repository directory.
     :return: A dictionary representing the structure.
     """
@@ -223,6 +224,8 @@ def create_file_structure(directory_path):
 import yaml
 
 if __name__ == "__main__":
+
+    # Testing create_file_structure
     with open ("test2.yml", "w") as f:
         data = create_file_structure(".")
 
