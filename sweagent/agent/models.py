@@ -1189,6 +1189,10 @@ def get_model(args: ModelArguments, commands: list[Command] | None = None):
         return DeepSeekModel(args, commands)
     elif args.model_name in TogetherModel.SHORTCUTS:
         return TogetherModel(args, commands)
+    elif args.model_name in GroqModel.SHORTCUTS:
+        return GroqModel(args, commands)
+    elif args.model_name == "instant_empty_submit":
+        return InstantEmptySubmitTestModel(args, commands)
     elif args.model_name.startswith("glm"):
         return GLMModel(args, commands)
     elif args.model_name.startswith("codegeex"):
