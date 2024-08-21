@@ -21,6 +21,7 @@ from tenacity import (
 )
 
 from typing import Optional, Union
+from sweagent.utils.config import keys_config
 # from sweagent.agent import generate
 import yaml
 
@@ -294,7 +295,7 @@ class OpenAIModel(BaseModel):
                 api_version=keys_config.get("AZURE_OPENAI_API_VERSION", "2024-02-01"),
             )
         else:
-            api_base_url: str | None = keys_config.get("OPENAI_API_BASE_URL", None)
+            api_base_url: Optional[str] = keys_config.get("OPENAI_API_BASE_URL", None)
             self.client = OpenAI(api_key=keys_config["OPENAI_API_KEY"], base_url=api_base_url)
 
     def history_to_messages(
