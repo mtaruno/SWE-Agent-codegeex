@@ -4,7 +4,6 @@ import "../static/message.css";
 import "../static/envMessage.css";
 
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
-import bash from "react-syntax-highlighter/dist/esm/languages/prism/bash";
 import { prism } from "react-syntax-highlighter/dist/esm/styles/prism";
 
 // SyntaxHighlighter.registerLanguage('bash', bash);

@@ -24,7 +24,6 @@ function LRunControl({
   const defaultPS =
     "https://github.com/marshmallow-code/marshmallow/issues/1357";
 
-  const defaultRepo = "https://github.com/swe-agent-demo/marshmallow";
 
   const handlePsTypeChange = (event) => {
     const selectedType = event.target.value;

@@ -1,0 +1,16 @@
+/* Add your CSS styles for EnvFeed component here */
+.envFeed {
+  /* Example styles */
+  background-color: #f5f5f5;
+  padding: 10px;
+  border-radius: 5px;
+}
+
+.scrollableDiv {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.innerDiv {
+  padding: 10px;
+}

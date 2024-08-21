@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef } from "react";
 import axios from "axios";
 import io from "socket.io-client";
 import "./static/run.css";
@@ -63,7 +63,6 @@ function Run() {
 
   const [tabKey, setTabKey] = useState("problem");
 
-  const stillComputingTimeoutRef = useRef(null);
 
   axios.defaults.baseURL = url;
 
@@ -287,7 +286,7 @@ function Run() {
       socket.off("connect_error");
       socket.off("update_banner", handleUpdateBanner);
     };
-  }, []);
+  }, [scrollAgent, scrollDetectedAgent, scrollDetectedEnv, scrollDetectedLog, scrollEnv, scrollLog]);
 
   function renderErrorMessage() {
     if (errorBanner) {
