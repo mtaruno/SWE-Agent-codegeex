@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React from "react";
 import EnvMessage from "../EnvMessage";
 
 import MacBar from "../MacBar";
