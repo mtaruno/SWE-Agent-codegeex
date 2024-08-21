@@ -116,6 +116,7 @@ if __name__ == "__main__":
         default=5,
         help="The number of files to return",
     )
+    parser.add_argument("repo_dir", type=str, help='')
     args = parser.parse_args()
 
     LF = LocalizeFiles()
