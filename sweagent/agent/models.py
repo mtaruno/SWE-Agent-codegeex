@@ -19,8 +19,7 @@ from tenacity import (
 )
 
 from typing import Optional, Union
-
-from sweagent.agent.codegeex4 import generate
+# from sweagent.agent import generate
 import yaml
 
 logger = logging.getLogger("api_models")
@@ -36,7 +35,7 @@ for handler in logger.handlers:
     logger.removeHandler(handler)
 
 # Create a file handler
-file_handler = logging.FileHandler('/Users/matthewtaruno/Library/Mobile Documents/com~apple~CloudDocs/Dev/SWE-agent/sweagent/agent/app.log', mode='w')
+file_handler = logging.FileHandler('/Users/matthewtaruno/Library/Mobile Documents/com~apple~CloudDocs/Dev/tree-agent/sweagent/agent/app.log', mode='w')
 
 # Create a logging format
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')

@@ -7,8 +7,8 @@ import subprocess
 import uuid
 from collections import OrderedDict
 
-from agentless.util.preprocess_data import get_repo_files
-from get_repo_structure.get_patch_info import parse_patch
+from util.preprocess_data import get_repo_files
+from util.get_patch_info import parse_patch
 
 
 def check_syntax(code):
