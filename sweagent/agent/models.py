@@ -12,6 +12,7 @@ from anthropic import AI_PROMPT, HUMAN_PROMPT, Anthropic, AnthropicBedrock
 # from groq import Groq
 from openai import AzureOpenAI, BadRequestError, OpenAI
 from simple_parsing.helpers.serialization.serializable import FrozenSerializable, Serializable
+from sweagent.utils.config import keys_config
 from tenacity import (
     retry,
     retry_if_not_exception_type,
