@@ -25,6 +25,12 @@ from flask import Flask, make_response, render_template, request, session
 from flask_cors import CORS
 from flask_socketio import SocketIO
 
+import sys
+from pathlib import Path
+
+# Add the parent directory of sweagent to the Python path
+sys.path.append(str(Path(__file__).resolve().parent.parent.parent))
+
 from sweagent import CONFIG_DIR, PACKAGE_DIR
 from sweagent.agent.agents import AgentArguments
 from sweagent.agent.models import ModelArguments
