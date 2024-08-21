@@ -7,7 +7,6 @@ from util._repo_structure.get_repo_structure import (
     parse_python_file,
 )
 
-
 def line_wrap_content(
     content: str,
     context_intervals=None,
