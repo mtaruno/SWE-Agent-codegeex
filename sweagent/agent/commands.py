@@ -251,7 +251,7 @@ class ParseCommandDetailed(ParseCommandBash):
             if "arguments" in cmd.__dict__ and cmd.arguments is not None:
                 docs += "  arguments:\n"
                 for param, settings in cmd.arguments.items():
-                    req_string = "required" if settings["required"] else "optional"
+                    req_string = "required" if settings.get("required", False) else "optional"
                     docs += f"    - {param} ({settings['type']}) [{req_string}]: {settings['description']}\n"
             docs += "\n"
         return docs
