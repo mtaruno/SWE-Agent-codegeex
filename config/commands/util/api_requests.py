@@ -4,7 +4,6 @@ from typing import Dict, Union
 
 import openai
 import tiktoken
-from agentless.util.codegeex4 import generate
 import os
 import config
 
