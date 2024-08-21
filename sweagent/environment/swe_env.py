@@ -20,8 +20,6 @@ import yaml
 from ghapi.all import GhApi
 from git import Repo
 from simple_parsing.helpers.serialization.serializable import FrozenSerializable
-# from swebench.harness.constants import MAP_REPO_VERSION_TO_SPECS
-# from swebench.harness.utils import get_environment_yml, get_requirements
 
 import docker
 import docker.errors
