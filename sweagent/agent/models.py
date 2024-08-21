@@ -9,7 +9,7 @@ from pathlib import Path
 
 import together
 from anthropic import AI_PROMPT, HUMAN_PROMPT, Anthropic, AnthropicBedrock
-from groq import Groq
+# from groq import Groq
 from openai import AzureOpenAI, BadRequestError, OpenAI
 from simple_parsing.helpers.serialization.serializable import FrozenSerializable, Serializable
 from tenacity import (
@@ -25,6 +25,7 @@ import yaml
 
 logger = logging.getLogger("api_models")
 
+_MAX_RETRIES = 6
 # Configure the logging system to write to a file
 
 # Set the logging level
