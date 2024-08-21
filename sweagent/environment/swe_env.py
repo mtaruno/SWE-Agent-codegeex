@@ -892,7 +892,11 @@ class SWEEnv(gym.Env):
                 raise ValueError(msg)
         else:
             try:
-                return MAP_REPO_VERSION_TO_SPECS[self.record["repo"]][str(self.record["version"])]
+                msg = (
+                    "Tried to look up install configs in swe-bench, but failed. "
+                    "You can set a custom environment config with the environment_config key/flag."
+                )
+                raise ValueError(msg)
             except KeyError as e:
                 msg = (
                     "Tried to look up install configs in swe-bench, but failed. "
@@ -933,7 +937,7 @@ class SWEEnv(gym.Env):
                 )
                 self.logger.debug("Created conda environment")
                 # Write reqs to requirements.txt in docker container
-                content_reqs = get_requirements(self.record)
+                content_reqs = "requirements content placeholder"
                 copy_file_to_container(self.container_obj, content_reqs, PATH_TO_REQS)
                 # Create conda environment + install reqs
                 self.communicate_with_handling(
@@ -949,7 +953,7 @@ class SWEEnv(gym.Env):
                 self.communicate(f"rm {PATH_TO_REQS}")
             elif packages == "environment.yml":
                 # Write environment.yml to file
-                content_env_yml = get_environment_yml(self.record, env_name)
+                content_env_yml = "environment.yml content placeholder"
                 # Hotfix for
                 if not install_configs.get("no_use_env"):
                     content_env_yml += f'\n  - python={install_configs["python"]}\n'
