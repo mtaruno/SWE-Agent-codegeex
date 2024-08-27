@@ -17,6 +17,7 @@ from util.api_requests import (
     num_tokens_from_messages,
     request_chatgpt_engine,
 )
+
 class LocalizeFiles:
     def __init__(self, max_tokens: int = 1000):
         self.max_tokens = max_tokens
