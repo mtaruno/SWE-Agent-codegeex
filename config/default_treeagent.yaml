@@ -100,7 +100,6 @@ env_variables:
   SEARCH_INDEX: 0
 command_files:
 - config/commands/defaults.sh
-- config/commands/search.sh
 - config/commands/edit_linting.sh
 - config/commands/_split_string.py
 - config/commands/localize.sh
