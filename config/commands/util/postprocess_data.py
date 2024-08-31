@@ -396,9 +396,6 @@ def extract_code_blocks(text):
 
 def extract_locs_for_files(locs, file_names):
     # TODO: keep the order from this fine-grained FL results.
-
-    
-
     results = {fn: [] for fn in file_names} # dictionary with file names as the keys
     with open("localize_related.txt", "a") as f:
         f.write("Results Dict (contains filenames)\n" + str(results) + "\n"*3)
@@ -428,10 +425,10 @@ def extract_locs_for_files(locs, file_names):
     output = [["\n".join(results[fn])] for fn in file_names]
 
 
-    with open("localize_related.txt", "a") as f:
-        f.write("Model Found Locs Separated:\n")
-        for i in output:
-            f.write(str(i) + "\n"*3)
+    # with open("localize_related.txt", "a") as f:
+    #     f.write("Model Found Locs Separated:\n")
+    #     for i in output:
+    #         f.write(str(i) + "\n"*3)
 
     return output
 
