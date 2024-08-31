@@ -51,7 +51,6 @@ from sweagent.environment.utils import (
     get_gh_issue_data,
     parse_gh_issue_url,
 )
-
 __doc__: str = """ Run inference. Usage examples:
 
 ```bash

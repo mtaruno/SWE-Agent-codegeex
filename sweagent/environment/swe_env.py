@@ -636,6 +636,44 @@ class SWEEnv(gym.Env):
             error_msg="Failed to add commands directory to PATH",
         )
 
+    def add_commands(self, commands: list[dict]) -> None:
+        """
+        Adds custom commands to container
+        """
+
+        # dump commands to file
+
+        for command in commands:
+            print(command["name"] + "\n")
+            print(command["contents"] + "\n")
+            print(command["type"] + "\n")
+            print("-" * 80 + "\n")
+
+        for command in commands:
+            name = command["name"]
+            contents = command["contents"]
+            copy_file_to_container(self.container_obj, contents, f"/root/commands/{name}")
+            if command["type"] == "source_file":
+                self.communicate_with_handling(
+                    f"source /root/commands/{name}",
+                    error_msg=(
+                        f"Failed to source {name}. If you meant to make a script,"
+                        " start the file with a shebang (e.g. #!/usr/bin/env python)."
+                    ),
+                )
+            elif command["type"] == "script":
+                self.communicate_with_handling(
+                    f"chmod +x /root/commands/{name}",
+                    error_msg=f"Failed to chmod {name}",
+                )
+            elif command["type"] == "utility":
+                # nothing to do for utility scripts
+                pass
+            else:
+                msg = f"Invalid command type: {command['type']}"
+                raise ValueError(msg)
+
+
     def _communicate_experimental(
         self,
         input: str,
@@ -1051,33 +1089,6 @@ class SWEEnv(gym.Env):
 
         self.logger.info("Installation step took %.2f seconds", time.perf_counter() - t0)
 
-    def add_commands(self, commands: list[dict]) -> None:
-        """
-        Adds custom commands to container
-        """
-        for command in commands:
-            name = command["name"]
-            contents = command["contents"]
-            copy_file_to_container(self.container_obj, contents, f"/root/commands/{name}")
-            if command["type"] == "source_file":
-                self.communicate_with_handling(
-                    f"source /root/commands/{name}",
-                    error_msg=(
-                        f"Failed to source {name}. If you meant to make a script,"
-                        " start the file with a shebang (e.g. #!/usr/bin/env python)."
-                    ),
-                )
-            elif command["type"] == "script":
-                self.communicate_with_handling(
-                    f"chmod +x /root/commands/{name}",
-                    error_msg=f"Failed to chmod {name}",
-                )
-            elif command["type"] == "utility":
-                # nothing to do for utility scripts
-                pass
-            else:
-                msg = f"Invalid command type: {command['type']}"
-                raise ValueError(msg)
 
     def interrupt(self) -> None:
         """
@@ -1199,3 +1210,4 @@ class SWEEnv(gym.Env):
                 "any required changes onto the branch and then click "
                 "'Ready for Review' to bring it to the attention of the maintainers.",
             )
+
