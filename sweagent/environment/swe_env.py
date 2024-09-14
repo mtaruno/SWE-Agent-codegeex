@@ -641,8 +641,22 @@ class SWEEnv(gym.Env):
         localize_file_path = os.path.join(REPO_ROOT, "config", "commands", "_localize_file.py")
         keys_cfg_path = os.path.join(REPO_ROOT, "keys.cfg")
         if os.path.exists(localize_file_path):
-            copy_file_to_container(self.container_obj, localize_file_path, "/root/commands/_localize_file.py")
+            # Read the content of the file
+            with open(localize_file_path, 'r') as file:
+                content = file.read()
+            
+            # Remove any problematic first line (local path)
+            content_lines = content.split('\n')
+            if content_lines and ('/' in content_lines[0] or '\\' in content_lines[0]):
+                content = '\n'.join(content_lines[1:])
+            
+            # Debug: Print the content that will be copied to the container
+            self.logger.debug(f"Content to be copied to _localize_file.py:\n{content[:500]}...")  # Print first 500 chars
+            
+            # Copy the content directly to the container
+            copy_file_to_container(self.container_obj, content, "/root/commands/_localize_file.py", is_content=True)
             copy_file_to_container(self.container_obj, keys_cfg_path, "/root/commands/keys.cfg")
+            
             self.logger.info("Copied _localize_file.py and keys.cfg to the container")
         else:
             self.logger.warning("_localize_file.py not found in the expected location on the host.")
