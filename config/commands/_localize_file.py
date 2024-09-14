@@ -1,4 +1,13 @@
-#!/usr/bin/env python
+"""This helper command is used to localize to the top N suspicious files that are related to the problem statement.
+
+Usage:
+    python _localize_file.py <problem_statement> <repo_dir> <top_n> 
+
+Where:
+    <problem_statement> is the problem statement
+    <repo_dir> is the repository directory
+    <top_n> is the number of files to return
+"""
 
 import json
 import os
@@ -13,6 +22,8 @@ import tiktoken
 import config
 import libcst as cst
 import libcst.matchers as m
+
+print("localize_file.py is being used...")
 
 cfg = config.Config(os.path.join(os.getcwd(), "keys.cfg"))
 client = openai.OpenAI(api_key=cfg['OPENAI_API_KEY'])

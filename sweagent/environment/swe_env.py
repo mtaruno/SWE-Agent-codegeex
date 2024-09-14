@@ -14,6 +14,7 @@ import traceback
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
+import tempfile
 
 import gymnasium as gym
 import yaml
@@ -635,24 +636,55 @@ class SWEEnv(gym.Env):
             "export PATH=$PATH:/root/commands",
             error_msg="Failed to add commands directory to PATH",
         )
+        
+        # Copy _localize_file.py to the container
+        localize_file_path = os.path.join(REPO_ROOT, "config", "commands", "_localize_file.py")
+        keys_cfg_path = os.path.join(REPO_ROOT, "keys.cfg")
+        if os.path.exists(localize_file_path):
+            copy_file_to_container(self.container_obj, localize_file_path, "/root/commands/_localize_file.py")
+            copy_file_to_container(self.container_obj, keys_cfg_path, "/root/commands/keys.cfg")
+            self.logger.info("Copied _localize_file.py and keys.cfg to the container")
+        else:
+            self.logger.warning("_localize_file.py not found in the expected location on the host.")
+
+        # Verify the content of _localize_file.py in the container
+        self.communicate_with_handling(
+            "cat /root/commands/_localize_file.py",
+            error_msg="Failed to print _localize_file.py contents",
+        )
 
     def add_commands(self, commands: list[dict]) -> None:
         """
         Adds custom commands to container
         """
-
-        # dump commands to file
-
-        for command in commands:
-            print(command["name"] + "\n")
-            print(command["contents"] + "\n")
-            print(command["type"] + "\n")
-            print("-" * 80 + "\n")
-
         for command in commands:
             name = command["name"]
             contents = command["contents"]
-            copy_file_to_container(self.container_obj, contents, f"/root/commands/{name}")
+            self.logger.info(f"Adding command: {name}")
+            
+            if name.endswith('.py'):
+                # For Python files, read the contents and remove any shebang lines
+                with open(contents, 'r') as file:
+                    file_contents = file.read()
+                lines = file_contents.splitlines()
+                if lines and lines[0].startswith('#!'):
+                    lines = lines[1:]
+                file_contents = '\n'.join(lines)
+                
+                # Write the modified contents to a temporary file
+                with tempfile.NamedTemporaryFile(mode='w', delete=False) as temp_file:
+                    temp_file.write(file_contents)
+                    temp_file_path = temp_file.name
+                
+                # Copy the temporary file to the container
+                copy_file_to_container(self.container_obj, temp_file_path, f"/root/commands/{name}")
+                
+                # Remove the temporary file
+                os.unlink(temp_file_path)
+            else:
+                # For non-Python files, copy as is
+                copy_file_to_container(self.container_obj, contents, f"/root/commands/{name}")
+            
             if command["type"] == "source_file":
                 self.communicate_with_handling(
                     f"source /root/commands/{name}",
@@ -672,7 +704,6 @@ class SWEEnv(gym.Env):
             else:
                 msg = f"Invalid command type: {command['type']}"
                 raise ValueError(msg)
-
 
     def _communicate_experimental(
         self,
