@@ -30,8 +30,9 @@ find_sus_files() {
     ls -R /root/commands >&2
 
     echo "Using _localize_file.py from: $localize_script" >&2
+    echo "Contents of _localize_file.py:" >&2
+    cat "$localize_script" >&2
 
-    # Run the Python script with the correct path
     result=$(python "$localize_script" "$issue_text" "$dir_path" "$top_n")
     
     echo "$result"

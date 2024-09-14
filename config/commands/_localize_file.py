@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 """This helper command is used to localize to the top N suspicious files that are related to the problem statement.
 
 Usage:
