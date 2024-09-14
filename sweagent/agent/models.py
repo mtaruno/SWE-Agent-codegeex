@@ -38,8 +38,14 @@ for handler in logger.handlers:
     handler.close()
     logger.removeHandler(handler)
 
-# Create a file handler
-file_handler = logging.FileHandler('/Users/matthewtaruno/Library/Mobile Documents/com~apple~CloudDocs/Dev/tree-agent/sweagent/agent/app.log', mode='w')
+# Create the directory if it doesn't exist
+log_dir = os.path.dirname(os.path.abspath(__file__))
+log_file = os.path.join(log_dir, 'app.log')
+
+# Ensure the directory exists
+os.makedirs(log_dir, exist_ok=True)
+
+file_handler = logging.FileHandler(log_file, mode='w')
 
 # Create a logging format
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
