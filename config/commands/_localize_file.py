@@ -1,4 +1,20 @@
 #!/usr/bin/env python3
+# @yaml
+# signature: _localize_file <problem_statement> <repo_dir> <top_n>
+# docstring: Localize the top N most suspicious files related to the problem statement in the given repository.
+# arguments:
+#   problem_statement:
+#     type: string
+#     description: The problem statement or issue text
+#     required: true
+#   repo_dir:
+#     type: string
+#     description: The directory of the repository to search in
+#     required: true
+#   top_n:
+#     type: int
+#     description: The number of suspicious files to return
+#     required: true
 
 """This helper command is used to localize to the top N suspicious files that are related to the problem statement.
 
@@ -13,14 +29,14 @@ Where:
 
 import json
 import os
+import sys
 import logging
 import re
 import ast
-from typing import List, Dict, Any, Tuple, Union
+from typing import List, Dict, Any, Tuple
 import signal
 import time
 import openai
-import tiktoken
 import config
 import libcst as cst
 import libcst.matchers as m
@@ -387,24 +403,24 @@ class LocalizeFiles:
         )
 
 def main():
-    import argparse
+    if len(sys.argv) != 4:
+        print("Usage: python _localize_file.py <problem_statement> <repo_dir> <top_n>")
+        sys.exit(1)
 
-    parser = argparse.ArgumentParser(description="Localize files")
-    parser.add_argument("problem_statement", type=str, help="The problem statement")
-    parser.add_argument("repo_dir", type=str, help='The repo directory')
-    parser.add_argument(
-        "top_n",
-        type=int,
-        default=5,
-        help="The number of files to return",
-    )
-    args = parser.parse_args()
+    problem_statement = sys.argv[1]
+    repo_dir = sys.argv[2]
+    top_n = int(sys.argv[3])
 
     LF = LocalizeFiles()
-    found_files, additional_artifact_loc_file, file_traj = LF.localize_files(args.problem_statement, args.top_n, args.repo_dir)
-    print("Found suspicious files:")
-    for file in found_files:
-        print(file)
+    found_files, additional_artifact_loc_file, file_traj = LF.localize_files(problem_statement, top_n, repo_dir)
+    
+    output = {
+        "found_files": found_files,
+        "additional_artifact": additional_artifact_loc_file,
+        "trajectory": file_traj
+    }
+    
+    print(f"<<COMMAND_OUTPUT>>{json.dumps(output)}<<COMMAND_OUTPUT>>")
 
 if __name__ == "__main__":
     main()
