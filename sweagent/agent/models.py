@@ -1210,6 +1210,11 @@ def get_model(args: ModelArguments, commands: list[Command] | None = None):
         return GroqModel(args, commands)
     elif args.model_name == "instant_empty_submit":
         return InstantEmptySubmitTestModel(args, commands)
+    elif args.model_name.startswith("glm"):
+        return GLMModel(args, commands)
+    elif args.model_name.startswith("codegeex"):
+        logger.info("Entering CodeGeeX Model") 
+        return codegeexModel(args, commands)
     else:
         msg = f"Invalid model name: {args.model_name}"
         raise ValueError(msg)
