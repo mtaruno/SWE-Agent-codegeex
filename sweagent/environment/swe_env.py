@@ -654,18 +654,13 @@ class SWEEnv(gym.Env):
             self.logger.debug(f"Content to be copied to _localize_file.py:\n{content[:500]}...")  # Print first 500 chars
             
             # Copy the content directly to the container
-            copy_file_to_container(self.container_obj, content, "/root/commands/_localize_file.py", is_content=True)
+            copy_file_to_container(self.container_obj, content, "/root/commands/_localize_file.py")
             copy_file_to_container(self.container_obj, keys_cfg_path, "/root/commands/keys.cfg")
             
             self.logger.info("Copied _localize_file.py and keys.cfg to the container")
         else:
             self.logger.warning("_localize_file.py not found in the expected location on the host.")
 
-        # Verify the content of _localize_file.py in the container
-        self.communicate_with_handling(
-            "cat /root/commands/_localize_file.py",
-            error_msg="Failed to print _localize_file.py contents",
-        )
 
     def add_commands(self, commands: list[dict]) -> None:
         """
