@@ -414,13 +414,16 @@ def main():
     LF = LocalizeFiles()
     found_files, additional_artifact_loc_file, file_traj = LF.localize_files(problem_statement, top_n, repo_dir)
     
-    output = {
-        "found_files": found_files,
-        "additional_artifact": additional_artifact_loc_file,
-        "trajectory": file_traj
-    }
+    # output = {
+    #     "found_files": found_files,
+    #     "additional_artifact": additional_artifact_loc_file,
+    #     "trajectory": file_traj
+    # }
+    print("Found files:")
+    for file in found_files:
+        print(file)
     
-    print(f"<<COMMAND_OUTPUT>>{json.dumps(output)}<<COMMAND_OUTPUT>>")
+    # print(f"<<COMMAND_OUTPUT>>{json.dumps(output)}<<COMMAND_OUTPUT>>")
 
 if __name__ == "__main__":
     main()
